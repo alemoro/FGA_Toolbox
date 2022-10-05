@@ -19,6 +19,7 @@ bColor = any(strcmpi(varargin, 'color'));
 bFlip = any(strcmpi(varargin, 'flipAxis'));
 bExperiment = any(strcmpi(varargin, 'experiment')); % if the table is a collection of multiple experiments
 bSecond = any(strcmpi(varargin, 'secondCondition'));
+bInvert = any(strcmpi(varargin, 'invertCondition'));
 bSame = any(strcmpi(varargin, 'sameFigure'));
 beforeAfter = any(strcmpi(varargin, 'beforeAfter'));
 bMedian = any(strcmpi(varargin, 'median')); % normalization method, default is mean
@@ -59,8 +60,12 @@ uniG = unique(varG);
 nCond = size(uniG,1);
 
 % assing the variable arguments
+nSub = 1;
 if bSecond
     scCond = varargin{find(strcmpi(varargin, 'secondCondition'))+1};
+    nSub = nCond;
+    nSec = numel(unique(scCond));
+    firstLab = unique(varG);
     if size(varX,2) > 1
         varB = repmat(varB,size(varX,2),1);
         varB = varB(:);
@@ -75,7 +80,11 @@ if bSecond
             varX1 = varX(:);
             uniG = unique(varG1);
         else
-            varG = myCond .* scCond;
+            if bInvert
+                varG = scCond .* myCond;
+            else
+                varG = myCond .* scCond;
+            end
             varX = varX(:);
             uniG = unique(varG);
         end
@@ -89,6 +98,12 @@ if bSecond
         else
         end
     end
+    row1 = cell(nSub,nSec);
+    for lab = 1:nSec
+        row1(:,lab) = [' ', cellstr(firstLab(lab)), ' '];
+    end
+    row1 = reshape(row1,1,numel(row1));
+    row2 = cellstr(repmat(unique(scCond)',1,nSub));
 end
 
 if bNormal
@@ -132,9 +147,10 @@ else
 end
 
 if beforeAfter
-    wisker(varG1, varX1, cmap, plotAx);
+    xx = wisker(varG1, varX1, cmap, plotAx, nSub);
 else
-    wisker(varG, varX, cmap, plotAx);
+    
+    xx = wisker(varG, varX, cmap, plotAx, nSub);
 end
 %boxplot(varX, varG, 'Color', cmap(1:nCond,:), 'symbol','')
 
@@ -155,21 +171,21 @@ for c = 1:nCond
     for s = 1:size(varX,2)
         tempX = varX(condFltr,s);
         if bBar
-            patch(plotAx, [tX-.2 tX+.2 tX+.2 tX-.2], [0 0 nanmean(tempX) nanmean(tempX)], cmap(c,:), 'EdgeColor', cmap(c,:), 'FaceAlpha',.3)
+            patch(plotAx, [xx(tX)-.2 xx(tX)+.2 xx(tX)+.2 xx(tX)-.2], [0 0 nanmean(tempX) nanmean(tempX)], cmap(c,:), 'EdgeColor', cmap(c,:), 'FaceAlpha',.3)
         else
-            plot(plotAx, [tX-.125 tX+.125], [nanmean(tempX) nanmean(tempX)], 'Color', 'w', 'LineWidth', 2)
+            plot(plotAx, [xx(tX)-.125 xx(tX)+.125], [nanmean(tempX) nanmean(tempX)], 'Color', 'w', 'LineWidth', 2)
         end
         sem = @(x) nanstd(x) ./ sqrt(sum(~isnan(x)));
-        plot(plotAx, [tX tX], [(nanmean(tempX)-sem(tempX)) (nanmean(tempX)+sem(tempX))], 'color', semC, 'LineWidth', 2)
+        plot(plotAx, [xx(tX) xx(tX)], [(nanmean(tempX)-sem(tempX)) (nanmean(tempX)+sem(tempX))], 'color', semC, 'LineWidth', 2)
         if bDots
             if beforeAfter
                 if s == 1
                     nData = numel(tempX);
                     plotX = varX(condFltr,:);
-                    plot(plotAx, repmat([tX + 0.15 tX + 0.85], nData, 1)',plotX', 'o-', 'color', cmap(c,:), 'MarkerEdgeColor', cmap(c,:), 'MarkerSize',4,'MarkerFaceColor','w')
+                    plot(plotAx, repmat([xx(tX) + 0.15 xx(tX) + 0.85], nData, 1)',plotX', 'o-', 'color', cmap(c,:), 'MarkerEdgeColor', cmap(c,:), 'MarkerSize',4,'MarkerFaceColor','w')
                 end
             else
-                x = linspace(tX - 0.15, tX + 0.15, nWeek);
+                x = linspace(xx(tX) - 0.15, xx(tX) + 0.15, nWeek);
                 for w=1:nWeek
                     tempWeek = weeks(w);
                     weekFltr = varB == tempWeek;
@@ -193,12 +209,17 @@ end
 box(plotAx, 'off');
 set(plotAx, 'TickDir', 'out');
 ylim(plotAx, 'auto')
-xlim(plotAx, [.5 nCond+.5])
-if beforeAfter
-    set(plotAx, 'XTick', 1.5:2:nCond+0.5);
-    set(plotAx, 'XTickLabel', legCond);
+xlim(plotAx, [.5 xx(end)+.5])
+if bSecond
+    set(gca, 'XTick', xx);
+    labelArray = [row1; row2];
+    labelArray = strjust(pad(labelArray),'center');
+    tickLabels = sprintf('%s\\newline%s\n', labelArray{:});
+%     tickLabels = strsplit(tickLabels);
+    set(plotAx, 'XTickLabel', tickLabels);
+    set(plotAx,'FontName','Arial')
 else
-    set(plotAx, 'XTick', 1:nCond);
+    set(plotAx, 'XTick', xx);
     set(plotAx, 'XTickLabel', legCond);
 end
 if bLabel
@@ -210,11 +231,20 @@ end
 end
 
 % wisker plot function
-function wisker(varG, varY, cmap, plotAx)
+function tempX = wisker(varG, varY, cmap, plotAx, nSubGroup)
 % first divide the data on the varius groups
 uniqueG = categories(varG);
 nGroup = numel(uniqueG);
 % get the data per group and calculate its values
+tempX = 1:nGroup;
+if nSubGroup > 1
+    tempX = 0;
+    for s=1:nGroup/nSubGroup
+        tempS = max(s, tempX(end)+1);
+        tempX = [tempX, tempS:.5:tempS+(0.5*nSubGroup)-0.5];
+    end
+    tempX = tempX(2:end);
+end
 for g=1:nGroup
     tempG = uniqueG(g);
     groupF = varG == tempG;
@@ -228,9 +258,9 @@ for g=1:nGroup
     highW = find(sortY<=maxW,1,'last');
     maxW = sortY(highW);
     % plot
-    patch(plotAx, [g-.25 g+.25 g+.25 g-.25], [quantY(1) quantY(1) quantY(3) quantY(3)], cmap(g,:), 'FaceAlpha', .3, 'EdgeColor', cmap(g,:));
-    plot(plotAx, [g-.25 g+.25], [quantY(2) quantY(2)], 'color', cmap(g,:), 'LineWidth', 2);
-    plot(plotAx, [g g], [minW quantY(1)], 'color', cmap(g,:));
-    plot(plotAx, [g g], [quantY(3) maxW], 'color', cmap(g,:));
+    patch(plotAx, [tempX(g)-.2 tempX(g)+.2 tempX(g)+.2 tempX(g)-.2], [quantY(1) quantY(1) quantY(3) quantY(3)], cmap(g,:), 'FaceAlpha', .3, 'EdgeColor', cmap(g,:));
+    plot(plotAx, [tempX(g)-.2 tempX(g)+.2], [quantY(2) quantY(2)], 'color', cmap(g,:), 'LineWidth', 2);
+    plot(plotAx, [tempX(g) tempX(g)], [minW quantY(1)], 'color', cmap(g,:));
+    plot(plotAx, [tempX(g) tempX(g)], [quantY(3) maxW], 'color', cmap(g,:));
 end
 end
