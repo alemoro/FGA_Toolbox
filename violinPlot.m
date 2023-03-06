@@ -98,9 +98,13 @@ if bSecond
         else
         end
     end
-    row1 = cell(nSub,nSec);
-    for lab = 1:nSec
-        row1(:,lab) = [' ', cellstr(firstLab(lab)), ' '];
+    row1 = cell(nSec,nSub);
+    for lab = 1:nSub
+        if nSec==3
+            row1(:,lab) = [' ', cellstr(firstLab(lab)), ' '];
+        else
+            row1(:,lab) = [cellstr(firstLab(lab)), repmat({' '}, nSec-1,1)];
+        end
     end
     row1 = reshape(row1,1,numel(row1));
     row2 = cellstr(repmat(unique(scCond)',1,nSub));
@@ -147,10 +151,10 @@ else
 end
 
 if beforeAfter
-    xx = wisker(varG1, varX1, cmap, plotAx, nSub);
+    xx = wisker(varG1, varX1, cmap, plotAx, nSec);
 else
     
-    xx = wisker(varG, varX, cmap, plotAx, nSub);
+    xx = wisker(varG, varX, cmap, plotAx, nSec);
 end
 %boxplot(varX, varG, 'Color', cmap(1:nCond,:), 'symbol','')
 
