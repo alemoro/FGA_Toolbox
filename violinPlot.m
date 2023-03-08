@@ -61,6 +61,7 @@ nCond = size(uniG,1);
 
 % assing the variable arguments
 nSub = 1;
+nSec = 0;
 if bSecond
     scCond = varargin{find(strcmpi(varargin, 'secondCondition'))+1};
     nSub = nCond;

@@ -53,7 +53,7 @@ switch plotType
         for c=1:nCond
             tempFltr = varC == conds(c);
             tempData = varY(tempFltr,:);
-            tempMean = nanmedian(tempData);
+            tempMean = nanmean(tempData);
             tempSEM = nanstd(tempData) ./ sqrt(sum(~isnan(tempData(:,1))));
             semY = [(tempMean-tempSEM); (tempMean-tempSEM); (tempMean+tempSEM); (tempMean+tempSEM)];
             patch(semX, semY, cmap(c,:), 'EdgeColor', 'none', 'FaceAlpha', .1);
