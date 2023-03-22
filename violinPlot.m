@@ -104,7 +104,7 @@ if bSecond
         if nSec==3
             row1(:,lab) = [' ', cellstr(firstLab(lab)), ' '];
         else
-            row1(:,lab) = [cellstr(firstLab(lab)), repmat({' '}, nSec-1,1)];
+            row1(:,lab) = [cellstr(firstLab(lab)); repmat({' '}, nSec-1,1)];
         end
     end
     row1 = reshape(row1,1,numel(row1));
