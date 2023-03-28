@@ -24,6 +24,12 @@ bSame = any(strcmpi(varargin, 'sameFigure'));
 beforeAfter = any(strcmpi(varargin, 'beforeAfter'));
 bMedian = any(strcmpi(varargin, 'median')); % normalization method, default is mean
 bAxes = any(strcmpi(varargin, 'axes')); % declear which axes to plot
+bNotch = any(strcmpi(varargin, 'notch')); % declear which axes to plot
+
+notch = false;
+if bNotch
+    notch = true;
+end
 
 if bBar
     bDots = false;
@@ -152,10 +158,10 @@ else
 end
 
 if beforeAfter
-    xx = wisker(varG1, varX1, cmap, plotAx, nSec);
+    xx = wisker(varG1, varX1, cmap, plotAx, nSec, notch);
 else
     
-    xx = wisker(varG, varX, cmap, plotAx, nSec);
+    xx = wisker(varG, varX, cmap, plotAx, nSec, notch);
 end
 %boxplot(varX, varG, 'Color', cmap(1:nCond,:), 'symbol','')
 
@@ -236,7 +242,7 @@ end
 end
 
 % wisker plot function
-function tempX = wisker(varG, varY, cmap, plotAx, nSubGroup)
+function tempX = wisker(varG, varY, cmap, plotAx, nSubGroup, notch)
 % first divide the data on the varius groups
 uniqueG = categories(varG);
 nGroup = numel(uniqueG);
@@ -262,9 +268,20 @@ for g=1:nGroup
     maxW = quantY(3) + 1.5*(quantY(3)-quantY(1));
     highW = find(sortY<=maxW,1,'last');
     maxW = sortY(highW);
+    % Calculate the notch
+    notchLow = quantY(2) - (1.57*(quantY(3)-quantY(1))) / sqrt(sum(~isnan(sortY)));
+    notchHigh = quantY(2) + (1.57*(quantY(3)-quantY(1))) / sqrt(sum(~isnan(sortY)));
     % plot
-    patch(plotAx, [tempX(g)-.2 tempX(g)+.2 tempX(g)+.2 tempX(g)-.2], [quantY(1) quantY(1) quantY(3) quantY(3)], cmap(g,:), 'FaceAlpha', .3, 'EdgeColor', cmap(g,:));
-    plot(plotAx, [tempX(g)-.2 tempX(g)+.2], [quantY(2) quantY(2)], 'color', cmap(g,:), 'LineWidth', 2);
+    if ~notch
+        patch(plotAx, [tempX(g)-.2 tempX(g)+.2 tempX(g)+.2 tempX(g)-.2], [quantY(1) quantY(1) quantY(3) quantY(3)], cmap(g,:), 'FaceAlpha', .3, 'EdgeColor', cmap(g,:));
+        plot(plotAx, [tempX(g)-.2 tempX(g)+.2], [quantY(2) quantY(2)], 'color', cmap(g,:), 'LineWidth', 2);
+    else
+        patch(plotAx, [tempX(g)-.2 tempX(g)+.2 tempX(g)+.2 tempX(g)+.1 tempX(g)+.2 tempX(g)+.2 tempX(g)-.2 tempX(g)-.2 tempX(g)-.1 tempX(g)-.2 tempX(g)-.2],...
+                      [quantY(1)   quantY(1)   notchLow    quantY(2)   notchHigh   quantY(3)   quantY(3)   notchHigh   quantY(2)   notchLow    quantY(1)],...
+                      cmap(g,:), 'FaceAlpha', .3, 'EdgeColor', cmap(g,:));
+        plot(plotAx, [tempX(g)-.1 tempX(g)+.1], [quantY(2) quantY(2)], 'color', cmap(g,:), 'LineWidth', 2);
+    end
+    
     plot(plotAx, [tempX(g) tempX(g)], [minW quantY(1)], 'color', cmap(g,:));
     plot(plotAx, [tempX(g) tempX(g)], [quantY(3) maxW], 'color', cmap(g,:));
 end
