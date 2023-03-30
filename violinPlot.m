@@ -26,6 +26,9 @@ bMedian = any(strcmpi(varargin, 'median')); % normalization method, default is m
 bAxes = any(strcmpi(varargin, 'axes')); % declear which axes to plot
 bNotch = any(strcmpi(varargin, 'notch')); % declear which axes to plot
 
+% First set the basic parameter
+weeks = unique(varB);
+nWeek = numel(weeks);
 notch = false;
 if bNotch
     notch = true;
@@ -41,11 +44,11 @@ if bExperiment
     varG = varG(expFilter,:);
     varX = varX(expFilter,:);
 end
-weeks = unique(varB);
-nWeek = numel(weeks);
+
 if ~iscategorical(varG)
     varG = categorical(varG);
 end
+
 if iscell(varX)
     varX = cell2mat(varX);
 end
@@ -65,10 +68,93 @@ end
 uniG = unique(varG);
 nCond = size(uniG,1);
 
+semC = 'w';
+if bBar
+    semC = 'k';
+    cla;
+end
+
+if bLabel
+    yLab = varargin{find(strcmpi(varargin, 'label'))+1};
+end
+
+if bColor
+    cmap = varargin{find(strcmpi(varargin, 'color'))+1};
+else
+    cmap = colorcube;
+end
+
+% Now adjust the data as needed
+if bNormal
+    control = varargin{find(strcmpi(varargin, 'normalize'))+1};
+    tempData = varX;
+    for w = 1:nWeek
+        tempWeek = weeks(w);
+        weekFltr = varB == tempWeek;
+        if numel(control) == 2
+            controlMaxFltr = varG == control(1);
+            controlMinFltr = varG == control(2);
+            if bMedian
+                tempMaxMean = nanmedian(varX(controlMaxFltr & weekFltr));
+                tempMinMean = nanmedian(varX(controlMinFltr & weekFltr));
+            else
+                tempMaxMean = nanmean(varX(controlMaxFltr & weekFltr));
+                tempMinMean = nanmean(varX(controlMinFltr & weekFltr));
+            end
+        else
+            controlMaxFltr = varG == control;
+            if bMedian
+                tempMaxMean = nanmedian(varX(controlMaxFltr & weekFltr));
+            else
+                tempMaxMean = nanmean(varX(controlMaxFltr & weekFltr));
+            end
+            tempMinMean = 0;
+        end
+        tempData(weekFltr) = (varX(weekFltr) - tempMinMean) / (tempMaxMean - tempMinMean);
+    end
+    varX = tempData;
+end
+
+if beforeAfter
+    scCond = varargin{find(strcmpi(varargin, 'secondCondition'))+1};
+    secondCondtitions = unique(scCond);
+    % Set the axis label
+    firstLab = unique(varG);
+    secondLab = unique(scCond);
+    nMain = numel(firstLab);
+    nSec = numel(secondLab);
+    row1 = cell(nSec,nMain);
+    for lab = 1:nMain
+        if nSec==3
+            row1(:,lab) = [' ', cellstr(firstLab(lab)), ' '];
+        else
+            row1(:,lab) = [cellstr(firstLab(lab)); repmat({' '}, nSec-1,1)];
+        end
+    end
+    row1 = reshape(row1,1,numel(row1));
+    row2 = cellstr(repmat(unique(scCond)',1,nMain));
+    % Split the data according to the two categoricals
+    beforeData = varX(scCond == secondCondtitions(1));
+    afterData = varX(scCond == secondCondtitions(2));
+    % The data should have the same dimension, if not show an error
+    if numel(beforeData) ~= numel(afterData)
+        errordlg('The data is not consistent', 'Plot Failed');
+    else
+        varX = [beforeData; afterData];
+        groupB = [varG(scCond == secondCondtitions(1)); varG(scCond == secondCondtitions(2))];
+        groupA = [scCond(scCond == secondCondtitions(1)); scCond(scCond == secondCondtitions(2))];
+        varG = groupB .* categorical(groupA);
+        varG = removecats(varG);
+        uniG = unique(varG);
+        nCond = size(uniG,1);
+        bSecond = false;
+    end
+end
+
 % assing the variable arguments
-nSub = 1;
-nSec = 0;
 if bSecond
+    nSub = 1;
+    nSec = 0;
     scCond = varargin{find(strcmpi(varargin, 'secondCondition'))+1};
     nSub = nCond;
     nSec = numel(unique(scCond));
@@ -117,111 +203,58 @@ if bSecond
     row2 = cellstr(repmat(unique(scCond)',1,nSub));
 end
 
-if bNormal
-    control = varargin{find(strcmpi(varargin, 'normalize'))+1};
-    tempData = varX;
-    for w = 1:nWeek
-        tempWeek = weeks(w);
-        weekFltr = varB == tempWeek;
-        if numel(control) == 2
-            controlMaxFltr = varG == control(1);
-            controlMinFltr = varG == control(2);
-            if bMedian
-                tempMaxMean = nanmedian(varX(controlMaxFltr & weekFltr));
-                tempMinMean = nanmedian(varX(controlMinFltr & weekFltr));
-            else
-                tempMaxMean = nanmean(varX(controlMaxFltr & weekFltr));
-                tempMinMean = nanmean(varX(controlMinFltr & weekFltr));
-            end
-        else
-            controlMaxFltr = varG == control;
-            if bMedian
-                tempMaxMean = nanmedian(varX(controlMaxFltr & weekFltr));
-            else
-                tempMaxMean = nanmean(varX(controlMaxFltr & weekFltr));
-            end
-            tempMinMean = 0;
-        end
-        tempData(weekFltr) = (varX(weekFltr) - tempMinMean) / (tempMaxMean - tempMinMean);
-    end
-    varX = tempData;
-end
-
-if bLabel
-    yLab = varargin{find(strcmpi(varargin, 'label'))+1};
-end
-
-if bColor
-    cmap = varargin{find(strcmpi(varargin, 'color'))+1};
-else
-    cmap = colorcube;
-end
-
-if beforeAfter
-    xx = wisker(varG1, varX1, cmap, plotAx, nSec, notch);
-else
-    
-    xx = wisker(varG, varX, cmap, plotAx, nSec, notch);
-end
+% Now start to plot the data
+xx = wisker(varG, varX, cmap, plotAx, nSec, notch);
 %boxplot(varX, varG, 'Color', cmap(1:nCond,:), 'symbol','')
 
-semC = 'w';
-if bBar
-    semC = 'k';
-    cla;
-end
+
 tX=1;
 legCond = cell(nCond,1);
-if beforeAfter
-    nCond = nCond / 2;
-    uniG = unique(varG);
-end
 for c = 1:nCond
     tempCond = uniG(c);
     condFltr = varG == tempCond;
-    for s = 1:size(varX,2)
-        tempX = varX(condFltr,s);
-        if bBar
-            patch(plotAx, [xx(tX)-.2 xx(tX)+.2 xx(tX)+.2 xx(tX)-.2], [0 0 nanmean(tempX) nanmean(tempX)], cmap(c,:), 'EdgeColor', cmap(c,:), 'FaceAlpha',.3)
-        else
-            plot(plotAx, [xx(tX)-.125 xx(tX)+.125], [nanmean(tempX) nanmean(tempX)], 'Color', 'w', 'LineWidth', 2)
-        end
-        sem = @(x) nanstd(x) ./ sqrt(sum(~isnan(x)));
-        plot(plotAx, [xx(tX) xx(tX)], [(nanmean(tempX)-sem(tempX)) (nanmean(tempX)+sem(tempX))], 'color', semC, 'LineWidth', 2)
-        if bDots
-            if beforeAfter
-                if s == 1
-                    nData = numel(tempX);
-                    plotX = varX(condFltr,:);
-                    plot(plotAx, repmat([xx(tX) + 0.15 xx(tX) + 0.85], nData, 1)',plotX', 'o-', 'color', cmap(c,:), 'MarkerEdgeColor', cmap(c,:), 'MarkerSize',4,'MarkerFaceColor','w')
-                end
+    tempX = varX(condFltr);
+    if bBar
+        patch(plotAx, [xx(tX)-.2 xx(tX)+.2 xx(tX)+.2 xx(tX)-.2], [0 0 nanmean(tempX) nanmean(tempX)], cmap(c,:), 'EdgeColor', cmap(c,:), 'FaceAlpha',.3)
+    else
+        plot(plotAx, [xx(tX)-.125 xx(tX)+.125], [nanmean(tempX) nanmean(tempX)], 'Color', 'w', 'LineWidth', 2)
+    end
+    sem = @(x) nanstd(x) ./ sqrt(sum(~isnan(x)));
+    plot(plotAx, [xx(tX) xx(tX)], [(nanmean(tempX)-sem(tempX)) (nanmean(tempX)+sem(tempX))], 'color', semC, 'LineWidth', 2)
+    if bDots
+        if beforeAfter
+            if mod(c,2) == 0
+                plot(plotAx, xx(tX) - 0.15, tempX, 'o', 'MarkerEdgeColor', cmap(c,:), 'MarkerSize',4,'MarkerFaceColor','w')
+                beforeY = varX(varG == uniG(c-1));
+                plot(plotAx, repmat([xx(tX-1)+.15 xx(tX)-.15], numel(tempX), 1)',[beforeY tempX]', '-', 'color', cmap(c,:), 'MarkerEdgeColor', cmap(c,:), 'MarkerSize',4,'MarkerFaceColor','w')
             else
-                x = linspace(xx(tX) - 0.15, xx(tX) + 0.15, nWeek);
-                for w=1:nWeek
-                    tempWeek = weeks(w);
-                    weekFltr = varB == tempWeek;
-                    if sum(weekFltr & condFltr) > 0
-                        y = varX(weekFltr & condFltr,s);
-                        plot(plotAx, x(w),y, 'o', 'MarkerEdgeColor', cmap(c,:), 'MarkerSize',4,'MarkerFaceColor','w')
-                    end
+                plot(plotAx, xx(tX) + 0.15, tempX, 'o', 'MarkerEdgeColor', cmap(c,:), 'MarkerSize',4,'MarkerFaceColor','w')
+            end
+        else
+            x = linspace(xx(tX) - 0.15, xx(tX) + 0.15, nWeek);
+            for w=1:nWeek
+                tempWeek = weeks(w);
+                weekFltr = varB == tempWeek;
+                if sum(weekFltr & condFltr) > 0
+                    y = varX(weekFltr & condFltr);
+                    plot(plotAx, x(w),y, 'o', 'MarkerEdgeColor', cmap(c,:), 'MarkerSize',4,'MarkerFaceColor','w')
                 end
             end
-            legCond{c} = sprintf('%s (%d/%d)', char(tempCond), numel(tempX), nWeek);
         end
-%         legCond{c} = sprintf('%s (%d/%d)', char(tempCond), numel(tempX), nWeek);
-        legCond{c} = sprintf('%s', char(tempCond));
-        tX = tX+1;
+        legCond{c} = sprintf('%s (%d/%d)', char(tempCond), numel(tempX), nWeek);
     end
+    %         legCond{c} = sprintf('%s (%d/%d)', char(tempCond), numel(tempX), nWeek);
+    legCond{c} = sprintf('%s', char(tempCond));
+    tX = tX+1;
+    
     
 end
-if beforeAfter
-    nCond = nCond * 2;
-end
+
 box(plotAx, 'off');
 set(plotAx, 'TickDir', 'out');
 ylim(plotAx, 'auto')
 xlim(plotAx, [.5 xx(end)+.5])
-if bSecond
+if bSecond || beforeAfter
     set(gca, 'XTick', xx);
     labelArray = [row1; row2];
     labelArray = strjust(pad(labelArray),'center');
