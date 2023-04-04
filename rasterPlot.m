@@ -9,6 +9,7 @@ bArea = false | any(strcmpi(varargin, 'area'));
 bThreshold = false | any(strcmpi(varargin, 'threshold'));
 bXLabel = false | any(strcmpi(varargin, 'xlabel'));
 bYLabel = false | any(strcmpi(varargin, 'ylabel'));
+bMultiple = false | any(strcmpi(varargin, 'MultipleROIs'));
 
 % Get the axes were to plot the data
 if bAxes
@@ -48,7 +49,13 @@ if bThreshold
 end
 
 % Now plot the actual data
-plot(axPlot, varX, varY, '-k')
+if bMultiple
+    roiSet = varargin{find(strcmpi(varargin, 'MultipleROIs'))+1};
+    plot(axPlot, varX, varY(:,~roiSet), '-k')
+    plot(axPlot, varX, varY(:,roiSet), 'Color', [49,130,189]/255, 'LineWidth', 2)
+else
+    plot(axPlot, varX, varY, '-k')
+end
 
 % Garnish the plot
 axPlot.Box = 'off';
