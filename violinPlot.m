@@ -1,14 +1,58 @@
-%violinPlot ploting function
-% This function is called for bar graphs or boxplot ready for publication
-%
-% violinPlot(varX, varG, varB) is the minumum required and will plot
-% plain boxplots.
-% violinPlot(varX, varG, varB, plotT) also accept different plot type,
-% use 'dots' to overlay all data points aligned based on week, 'bar' if you
-% prefer a bar graph instead of a boxplot, as bar grafs the option 'dots'
-% is selected by default.
-% violinPlot(___, NAME, VALUE) accept colormap, normalization, yaxis label
 function violinPlot(varX, varG, varB, varargin)
+%VIOLINPLOT - Extended function for boxplots
+% Inputs arguments:
+%	varX: Input data, specified as a 1-by-m array.
+%	varG: Grouping variable, specified as a 1-by-m categorical array.
+%	varB: Random effect variable, specified as a 1-by-m categorical array.
+%	      For example, this array can contain labels for different biological replicas.
+%
+% Name Only Arguments      
+%	'dots': Add individual datapoints to the plot
+%	'bar': Create a barplot instead of a boxplot (default)
+%	'Notch': Add the data notch to the boxplot
+%	'SameFigure': Plot the data in the current selected axis
+%	'Median': Use the median as normalization method, default is mean
+%	          Note that this options requires the 'Normalize' argument.
+%	'BeforeAfter': Plot the data connecting ech dots in pairs.
+%	               Note that this options requires the 'SecondCondition' argument.
+%	'FlipAxis': Rotate the plot to that the X and Y axis are swapped.
+%	'InvertCondition': Use to quickly swap conditions.
+%	                   Note that this options requires the 'SecondCondition' argument.
+%
+% Name-Value Pair Arguments
+%	'Color' - RGB Triplet: User designed colormap. The default is "colorcube".
+%	'Label' - text: Text to use to label the Y-axis.
+%	'Axes' - Axes handle: Declear which axes to plot.
+%	'Normalize' - text: The name of the condition where the data should be normalized against.
+%	                    For 0-1 normalization, indicate both names into a cell array.
+%	'SecondCondition' - array: Additional grouping variable, specidied as a 1-by-m categorical array
+%
+% Examples
+% Create the syntetic data
+% varX = [rand(10,1)*0.5;rand(10,1)*0.5;rand(10,1)*0.5;rand(10,1)*2.5;rand(10,1)*2.5;rand(10,1)*2.5];
+% varG = categorical(repelem({'Group1'; 'Group2'}, 30, 1));
+% varX = categorical(repelem([1;2;3;1;2;3], 10, 1));
+%
+% Simple use
+% violinPlot(varX, varG, varB);
+%
+% Add dots to the plot
+% violinPlot(varX, varG, varB, 'dots');
+%
+% Normalize the data
+% violinPlot(varX, varG, varB, 'dots', 'Normalize', 'Group1');
+%
+% Add a second condition
+% varS = categorical(repelem({'Cat1';'Cat2';'Cat1';'Cat2'},15,1));
+% violinPlot(varX, varG, varB, 'dots', 'SecondCondition', varS);
+% violinPlot(varX, varG, varB, 'dots', 'SecondCondition', varS, 'BeforeAfter');
+%
+% See also: PLOT,  BOXPLOT, PATCH
+
+% Author: Alessandro Moro
+% Dept. Functional Genomics,
+% Center for Neurogenomics and Cognitive Research (CNCR),
+% email: a.moro@vu.nl
 
 bDots = any(strcmpi(varargin, 'dots'));
 bNormal = any(strcmpi(varargin, 'normalize'));
@@ -152,9 +196,9 @@ if beforeAfter
 end
 
 % assing the variable arguments
+nSec = 0;
 if bSecond
     nSub = 1;
-    nSec = 0;
     scCond = varargin{find(strcmpi(varargin, 'secondCondition'))+1};
     nSub = nCond;
     nSec = numel(unique(scCond));

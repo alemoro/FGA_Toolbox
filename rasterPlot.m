@@ -1,6 +1,25 @@
 function rasterPlot(varY, varargin)
 %RASTERPLOT Create raster plots based on data and inputs
-%   RASTERPLOT(VARY) plots the data in varY as a n-by-m with dots and each line separated by 1 unit
+% Inputs arguments:
+%	varY: Input data, specified as a n-by-m matrix, of 'n' regions and 'm' frames
+%
+% Name Only Arguments      
+%	'Area': Decision to plot the convolved area of the raster plot
+%
+% Name-Value Pair Arguments
+%	'Axes' - Axes handle: Declear which axes to plot.
+%	'varX' - array: Additional variable for the x axis, specidied as a 1-by-m array
+%   'Threshold' - integer: Add a red dotted line to indicate the threshold for the number of points in the raster
+%	'XLabel' - text: Text to use to label the X-axis.
+%	'YLabel' - text: Text to use to label the Y-axis.
+%	'MultipleROIs' - array: Boolean array to divide the raster plot into subgroups of cells
+%	
+% See also: PLOT, PATCH
+
+% Author: Alessandro Moro
+% Dept. Functional Genomics,
+% Center for Neurogenomics and Cognitive Research (CNCR),
+% email: a.moro@vu.nl
 
 % First check the arguments
 bAxes = false | any(strcmpi(varargin, 'axes'));
