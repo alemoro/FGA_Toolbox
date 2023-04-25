@@ -129,36 +129,6 @@ else
 end
 
 % Now adjust the data as needed
-if bNormal
-    control = varargin{find(strcmpi(varargin, 'normalize'))+1};
-    tempData = varX;
-    for w = 1:nWeek
-        tempWeek = weeks(w);
-        weekFltr = varB == tempWeek;
-        if numel(control) == 2
-            controlMaxFltr = varG == control(1);
-            controlMinFltr = varG == control(2);
-            if bMedian
-                tempMaxMean = nanmedian(varX(controlMaxFltr & weekFltr));
-                tempMinMean = nanmedian(varX(controlMinFltr & weekFltr));
-            else
-                tempMaxMean = nanmean(varX(controlMaxFltr & weekFltr));
-                tempMinMean = nanmean(varX(controlMinFltr & weekFltr));
-            end
-        else
-            controlMaxFltr = varG == control;
-            if bMedian
-                tempMaxMean = nanmedian(varX(controlMaxFltr & weekFltr));
-            else
-                tempMaxMean = nanmean(varX(controlMaxFltr & weekFltr));
-            end
-            tempMinMean = 0;
-        end
-        tempData(weekFltr) = (varX(weekFltr) - tempMinMean) / (tempMaxMean - tempMinMean);
-    end
-    varX = tempData;
-end
-
 if beforeAfter
     scCond = varargin{find(strcmpi(varargin, 'secondCondition'))+1};
     secondCondtitions = unique(scCond);
@@ -247,6 +217,35 @@ if bSecond
     row2 = cellstr(repmat(unique(scCond)',1,nSub));
 end
 
+if bNormal
+    control = varargin{find(strcmpi(varargin, 'normalize'))+1};
+    tempData = varX;
+    for w = 1:nWeek
+        tempWeek = weeks(w);
+        weekFltr = varB == tempWeek;
+        if numel(control) == 2
+            controlMaxFltr = varG == control(1);
+            controlMinFltr = varG == control(2);
+            if bMedian
+                tempMaxMean = nanmedian(varX(controlMaxFltr & weekFltr));
+                tempMinMean = nanmedian(varX(controlMinFltr & weekFltr));
+            else
+                tempMaxMean = nanmean(varX(controlMaxFltr & weekFltr));
+                tempMinMean = nanmean(varX(controlMinFltr & weekFltr));
+            end
+        else
+            controlMaxFltr = varG == control;
+            if bMedian
+                tempMaxMean = nanmedian(varX(controlMaxFltr & weekFltr));
+            else
+                tempMaxMean = nanmean(varX(controlMaxFltr & weekFltr));
+            end
+            tempMinMean = 0;
+        end
+        tempData(weekFltr) = (varX(weekFltr) - tempMinMean) / (tempMaxMean - tempMinMean);
+    end
+    varX = tempData;
+end
 % Now start to plot the data
 xx = wisker(varG, varX, cmap, plotAx, nSec, notch);
 %boxplot(varX, varG, 'Color', cmap(1:nCond,:), 'symbol','')

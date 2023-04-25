@@ -41,6 +41,7 @@ for t = 1:nTraces
         bStart = false;
         tempEnd = spikeLocs(s);
         valleyInt = tempData(spikeLocs(s));
+        valleyCount = 0;
         while ~bStart && (tempEnd > tempStart)
             tempIdx = find(allValleys(tempStart:tempEnd), 1, 'last')  + tempStart -1;
             if ~isempty(tempIdx)
@@ -49,13 +50,16 @@ for t = 1:nTraces
                     valleyInt = tempData(tempIdx);
                     tempLB = tempIdx;
                     tempEnd = tempIdx - 1;
+                    valleyCount = valleyCount + 1;
                 else
                     % There was a deeper valley
                     bStart = true;
                 end
             else
                 bStart = true;
-                tempLB = tempStart;
+                if valleyCount == 0
+                    tempLB = tempStart;
+                end
             end
         end
         indexLB(1,s) = tempLB;
@@ -104,7 +108,11 @@ for t = 1:nTraces
         indexRB(1,s) = tempRB;
         % Now calculate the duration at 25, 50, 75, and 90% of the height
         baseInt = min(tempData(indexLB(1,s):indexRB(1,s)));
-        promInt(s) = tempData(spikeLocs(s)) - baseInt;
+        try
+            promInt(s) = tempData(spikeLocs(s)) - baseInt;
+        catch ME
+            ME
+        end
         durationMarks = (baseInt + promInt(s)) .* [.25 .5 .75 .9];
         for dm = 1:4
             durationIdx = find(tempData(indexLB(1,s):indexRB(1,s)) >= durationMarks(dm));
