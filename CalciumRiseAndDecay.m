@@ -113,7 +113,7 @@ for t = 1:nTraces
         catch ME
             ME
         end
-        durationMarks = (baseInt + promInt(s)) .* [.25 .5 .75 .9];
+        durationMarks = baseInt + promInt(s) .* [.25 .5 .75 .9];
         for dm = 1:4
             durationIdx = find(tempData(indexLB(1,s):indexRB(1,s)) >= durationMarks(dm));
             diffIdx = find(gradient(durationIdx)>1, 1, 'first');
