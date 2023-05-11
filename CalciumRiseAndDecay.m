@@ -107,12 +107,11 @@ for t = 1:nTraces
         end
         indexRB(1,s) = tempRB;
         % Now calculate the duration at 25, 50, 75, and 90% of the height
-        baseInt = min(tempData(indexLB(1,s):indexRB(1,s)));
-        try
-            promInt(s) = tempData(spikeLocs(s)) - baseInt;
-        catch ME
-            ME
+        if indexLB(1,s) > indexRB(1,s)
+            indexLB(1,s) = max(1, find(tempData(1:indexRB(1,s)) >= tempData(indexRB(1,s)), 1));
         end
+        baseInt = min(tempData(indexLB(1,s):indexRB(1,s)));
+        promInt(s) = tempData(spikeLocs(s)) - baseInt;
         durationMarks = baseInt + promInt(s) .* [.25 .5 .75 .9];
         for dm = 1:4
             durationIdx = find(tempData(indexLB(1,s):indexRB(1,s)) >= durationMarks(dm));

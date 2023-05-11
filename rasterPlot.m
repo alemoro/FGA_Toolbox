@@ -29,6 +29,7 @@ bThreshold = false | any(strcmpi(varargin, 'threshold'));
 bXLabel = false | any(strcmpi(varargin, 'xlabel'));
 bYLabel = false | any(strcmpi(varargin, 'ylabel'));
 bMultiple = false | any(strcmpi(varargin, 'MultipleROIs'));
+bSilent = false | any(strcmpi(varargin, 'RemoveSilent'));
 
 % Get the axes were to plot the data
 if bAxes
@@ -48,6 +49,15 @@ else
     varX = 1:size(varY,1);
 end
 
+% Remove the silent cells
+if bSilent
+    silentFltr = all(isnan(varY));
+    varY(:,silentFltr) = [];
+    % Change the number in the raster to reflect the cells that we removed
+    varY(~isnan(varY)) = 1;
+    varY = varY .* repmat(1:size(varY,2), size(varY,1), 1);
+end
+
 % See if we need to plot the area underneath the raster and start the plot
 if bArea
     areaRaster = varY;
@@ -58,13 +68,22 @@ if bArea
     smoothWindow = smoothWindow / sum(smoothWindow);
     areaRaster = filter(smoothWindow, 1, areaRaster);
     area(axPlot, varX, areaRaster, 'FaceColor', 'k', 'FaceAlpha', 0.3, 'EdgeColor', 'none')
+    [networkPeaks, networkLocs] = findpeaks(areaRaster, 8, 'MinPeakProminence', 2.5);
+    plot(axPlot, networkLocs, networkPeaks, 'ok');
+    title(sprintf('Max network frequency: %.1f', numel(networkPeaks)/2));
 end
 
 % See if we need a threshold and plot it
 if bThreshold
     thr = varargin{find(strcmpi(varargin, 'threshold'))+1};
     isActive = sum(any(~isnan(varY)));
-    plot(axPlot, varX, ones(numel(varX),1)*thr*isActive, '--r')
+    for thr = 0.1:.1:1
+        if thr==.8
+            plot(axPlot, varX, ones(numel(varX),1)*thr*isActive, '--r', 'LineWidth', 2)
+        else
+            plot(axPlot, varX, ones(numel(varX),1)*thr*isActive, '--r')
+        end
+    end
 end
 
 % Now plot the actual data
