@@ -109,7 +109,7 @@ else
     plotAx = gca;
     hold on;
 end
-uniG = unique(varG);
+uniG = categories(varG);
 nCond = size(uniG,1);
 
 semC = 'w';
@@ -256,35 +256,37 @@ legCond = cell(nCond,1);
 for c = 1:nCond
     tempCond = uniG(c);
     condFltr = varG == tempCond;
-    tempX = varX(condFltr);
-    if bBar
-        patch(plotAx, [xx(tX)-.2 xx(tX)+.2 xx(tX)+.2 xx(tX)-.2], [0 0 nanmean(tempX) nanmean(tempX)], cmap(c,:), 'EdgeColor', cmap(c,:), 'FaceAlpha',.3)
-    else
-        plot(plotAx, [xx(tX)-.125 xx(tX)+.125], [nanmean(tempX) nanmean(tempX)], 'Color', 'w', 'LineWidth', 2)
-    end
-    sem = @(x) nanstd(x) ./ sqrt(sum(~isnan(x)));
-    plot(plotAx, [xx(tX) xx(tX)], [(nanmean(tempX)-sem(tempX)) (nanmean(tempX)+sem(tempX))], 'color', semC, 'LineWidth', 2)
-    if bDots
-        if beforeAfter
-            if mod(c,2) == 0
-                plot(plotAx, xx(tX) - 0.15, tempX, 'o', 'MarkerEdgeColor', cmap(c,:), 'MarkerSize',4,'MarkerFaceColor','w')
-                beforeY = varX(varG == uniG(c-1));
-                plot(plotAx, repmat([xx(tX-1)+.15 xx(tX)-.15], numel(tempX), 1)',[beforeY tempX]', '-', 'color', cmap(c,:), 'MarkerEdgeColor', cmap(c,:), 'MarkerSize',4,'MarkerFaceColor','w')
-            else
-                plot(plotAx, xx(tX) + 0.15, tempX, 'o', 'MarkerEdgeColor', cmap(c,:), 'MarkerSize',4,'MarkerFaceColor','w')
-            end
+    if sum(condFltr) > 0
+        tempX = varX(condFltr);
+        if bBar
+            patch(plotAx, [xx(tX)-.2 xx(tX)+.2 xx(tX)+.2 xx(tX)-.2], [0 0 nanmean(tempX) nanmean(tempX)], cmap(c,:), 'EdgeColor', cmap(c,:), 'FaceAlpha',.3)
         else
-            x = linspace(xx(tX) - 0.15, xx(tX) + 0.15, nWeek);
-            for w=1:nWeek
-                tempWeek = weeks(w);
-                weekFltr = varB == tempWeek;
-                if sum(weekFltr & condFltr) > 0
-                    y = varX(weekFltr & condFltr);
-                    plot(plotAx, x(w),y, 'o', 'MarkerEdgeColor', cmap(c,:), 'MarkerSize',4,'MarkerFaceColor','w')
+            plot(plotAx, [xx(tX)-.125 xx(tX)+.125], [nanmean(tempX) nanmean(tempX)], 'Color', 'w', 'LineWidth', 2)
+        end
+        sem = @(x) nanstd(x) ./ sqrt(sum(~isnan(x)));
+        plot(plotAx, [xx(tX) xx(tX)], [(nanmean(tempX)-sem(tempX)) (nanmean(tempX)+sem(tempX))], 'color', semC, 'LineWidth', 2)
+        if bDots
+            if beforeAfter
+                if mod(c,2) == 0
+                    plot(plotAx, xx(tX) - 0.15, tempX, 'o', 'MarkerEdgeColor', cmap(c,:), 'MarkerSize',4,'MarkerFaceColor','w')
+                    beforeY = varX(varG == uniG(c-1));
+                    plot(plotAx, repmat([xx(tX-1)+.15 xx(tX)-.15], numel(tempX), 1)',[beforeY tempX]', '-', 'color', cmap(c,:), 'MarkerEdgeColor', cmap(c,:), 'MarkerSize',4,'MarkerFaceColor','w')
+                else
+                    plot(plotAx, xx(tX) + 0.15, tempX, 'o', 'MarkerEdgeColor', cmap(c,:), 'MarkerSize',4,'MarkerFaceColor','w')
+                end
+            else
+                x = linspace(xx(tX) - 0.15, xx(tX) + 0.15, nWeek);
+                for w=1:nWeek
+                    tempWeek = weeks(w);
+                    weekFltr = varB == tempWeek;
+                    if sum(weekFltr & condFltr) > 0
+                        y = varX(weekFltr & condFltr);
+                        plot(plotAx, x(w),y, 'o', 'MarkerEdgeColor', cmap(c,:), 'MarkerSize',4,'MarkerFaceColor','w')
+                    end
                 end
             end
+            legCond{c} = sprintf('%s (%d/%d)', char(tempCond), numel(tempX), nWeek);
         end
-        legCond{c} = sprintf('%s (%d/%d)', char(tempCond), numel(tempX), nWeek);
     end
     %         legCond{c} = sprintf('%s (%d/%d)', char(tempCond), numel(tempX), nWeek);
     legCond{c} = sprintf('%s', char(tempCond));
