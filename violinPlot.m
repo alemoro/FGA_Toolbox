@@ -1,4 +1,4 @@
-function violinPlot(varX, varG, varB, varargin)
+function varargout = violinPlot(varX, varG, varB, varargin)
 %VIOLINPLOT - Extended function for boxplots
 % Inputs arguments:
 %	varX: Input data, specified as a 1-by-m array.
@@ -245,6 +245,11 @@ if bNormal
         tempData(weekFltr) = (varX(weekFltr) - tempMinMean) / (tempMaxMean - tempMinMean);
     end
     varX = tempData;
+end
+
+% if requested, save the data
+if nargout == 1
+    varargout{1} = varX;
 end
 % Now start to plot the data
 xx = wisker(varG, varX, cmap, plotAx, nSec, notch);
